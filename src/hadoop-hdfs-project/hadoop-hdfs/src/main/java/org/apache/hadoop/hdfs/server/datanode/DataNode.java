@@ -1074,15 +1074,21 @@ public class DataNode extends Configured
           + "Only kerberos based authentication is allowed.");
     }
   }
-  
+
   private void checkBlockLocalPathAccess() throws IOException {
     checkKerberosAuthMethod("getBlockLocalPathInfo()");
-    String currentUser = UserGroupInformation.getCurrentUser().getShortUserName();
-    if (!usersWithLocalPathAccess.contains(currentUser)) {
-      throw new AccessControlException(
-          "Can't continue with getBlockLocalPathInfo() "
-              + "authorization. The user " + currentUser
-              + " is not allowed to call getBlockLocalPathInfo");
+    UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
+    if (!usersWithLocalPathAccess.contains(currentUser.getShortUserName())) {
+      UserGroupInformation realUser = currentUser.getRealUser();
+      if (realUser == null ||
+          !usersWithLocalPathAccess.contains(realUser.getShortUserName())) {
+        //throw new AccessControlException(
+        LOG.warn(
+            "Can't continue with getBlockLocalPathInfo() "
+                + "authorization. The user " + currentUser.toString()
+                + ((realUser == null) ? "" : "(proxied by " + realUser.getShortUserName() + ")")
+                + " is not allowed to call getBlockLocalPathInfo");
+      }
     }
   }
 
