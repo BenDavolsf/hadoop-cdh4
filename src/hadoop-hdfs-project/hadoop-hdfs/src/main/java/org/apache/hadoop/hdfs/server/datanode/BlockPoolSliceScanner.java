@@ -226,6 +226,8 @@ class BlockPoolSliceScanner {
     
     if (added) {
       updateBytesToScan(info.getNumBytes(), info.lastScanTime);
+    } else {
+      LOG.warn("addBlockInfo to blockInfoSet failed: " + info);
     }
   }
   
@@ -315,11 +317,12 @@ class BlockPoolSliceScanner {
     
     if ( info != null ) {
       delBlockInfo(info);
-    } else if (blockInfoSet.contains(block)) {
+    } else if (blockInfoSet.first().getBlockId() == block.getBlockId()) {
       LOG.warn("updateScanStatus: Block only found in blockInfoSet, have to delete it");
-      delBlockInfo((BlockScanInfo)block);
-      info = new BlockScanInfo(block);
+      info = blockInfoSet.first();
+      delBlockInfo(info);
     } else {
+      LOG.warn("updateScanStatus: Block already be removed");
       // It might already be removed. Thats ok, it will be caught next time.
       info = new BlockScanInfo(block);
     }
